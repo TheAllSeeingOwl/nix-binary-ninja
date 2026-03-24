@@ -22,6 +22,7 @@
   binaryNinjaEdition ? "personal",
   forceWayland ? false,
   overrideSource ? null,
+  extraPythonDeps ? [],
 }: let
   sources = callPackage ./sources.nix {};
   platformSources = sources.editions.${binaryNinjaEdition};
@@ -65,7 +66,7 @@ in
       wayland
       libxml2.out
     ];
-    pythonDeps = [python3.pkgs.pip python3.pkgs.pyside6];
+    pythonDeps = [python3.pkgs.pip python3.pkgs.pyside6] ++ extraPythonDeps;
     appendRunpaths = ["${lib.getLib python3}/lib"];
     qtWrapperArgs = lib.optionals forceWayland [
       "--set"
