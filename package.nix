@@ -93,11 +93,16 @@ in
       mkdir -p $out/opt/binaryninja
       mkdir -p $out/share/pixmaps
       cp -r * $out/opt/binaryninja
+
+      # Move PySide6 out before we delete bundled Qt and run autoPatchelf.
+      # PySide6 was compiled against the bundled Qt and is ABI-incompatible
+      # with Nix's Qt (Qt_6_PRIVATE_API symbol version mismatch).
+      mv $out/opt/binaryninja/python3/PySide6 $out/pyside6_bundled
+
       rm -rf $out/opt/binaryninja/qt
       find $out/opt/binaryninja \
         \( -type f -o -type l \) \
         -name '*.so.*' \
-        -not -path '*/python3/*' \
         -not -name 'libbinaryninjacore.so.*' \
         -not -name 'libbinaryninjaui.so.*' \
         -not -name 'liblldb.so.*' \
@@ -120,6 +125,12 @@ in
     preFixup = ''
       patchelf $out/opt/binaryninja/plugins/lldb/lib/liblldb.so.* \
         --replace-needed libxml2.so.2 libxml2.so
+    '';
+
+    # Restore PySide6 after autoPatchelf so it keeps its bundled Qt dependencies
+    # intact rather than being relinked against Nix's incompatible Qt.
+    postFixup = ''
+      mv $out/pyside6_bundled $out/opt/binaryninja/python3/PySide6
     '';
 
     dontWrapQtApps = true;
