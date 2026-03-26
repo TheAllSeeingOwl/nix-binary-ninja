@@ -72,10 +72,6 @@ in
     # Wayland EGL integration lib may not be in the bundled Qt
     autoPatchelfIgnoreMissingDeps = ["libQt6WaylandEglClientHwIntegration.so.*"];
 
-    forceWaylandArgs = lib.optionals forceWayland [
-      "--run"
-      ''export QT_QPA_PLATFORM=wayland''
-    ];
     buildPhase = ":";
 
     desktopItems = [
@@ -107,7 +103,7 @@ in
       buildPythonPath "$pythonDeps"
       makeWrapper $out/opt/binaryninja/binaryninja $out/bin/binaryninja \
         --prefix PYTHONPATH : "$program_PYTHONPATH" \
-        "''${forceWaylandArgs[@]}"
+        ${lib.optionalString forceWayland "--set QT_QPA_PLATFORM wayland"}
 
       runHook postInstall
     '';
