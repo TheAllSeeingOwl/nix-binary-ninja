@@ -73,9 +73,8 @@ in
     autoPatchelfIgnoreMissingDeps = ["libQt6WaylandEglClientHwIntegration.so.*"];
 
     forceWaylandArgs = lib.optionals forceWayland [
-      "--set"
-      "QT_QPA_PLATFORM"
-      "wayland"
+      "--run"
+      ''export QT_QPA_PLATFORM=wayland''
     ];
     buildPhase = ":";
 
