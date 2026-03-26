@@ -57,6 +57,9 @@ in
       xorg.libXrender
       xorg.xcbutilimage
       xorg.xcbutilrenderutil
+      xorg.libxcb
+      xorg.xcbutilkeysyms
+      xorg.xcbutilwm
       # Qt is provided by Binary Ninja's bundled qt/ directory, NOT Nix.
       # The bundled PySide6/shiboken6/binaryninjaui are compiled against
       # the bundled Qt and are ABI-incompatible with Nix's Qt
@@ -69,8 +72,15 @@ in
     pythonDeps = [python3.pkgs.pip] ++ extraPythonDeps;
     appendRunpaths = ["${lib.getLib python3}/lib"];
 
-    # Wayland EGL integration lib may not be in the bundled Qt
-    autoPatchelfIgnoreMissingDeps = ["libQt6WaylandEglClientHwIntegration.so.*"];
+    # Some Qt/PySide6 deps are not bundled and not critical for core functionality
+    autoPatchelfIgnoreMissingDeps = [
+      "libQt6Qml.so.*"
+      "libQt6Quick.so.*"
+      "libQt6QuickVectorImageGenerator.so.*"
+      "libQt6ShaderTools.so.*"
+      "libQt6PrintSupport.so.*"
+      "libQt6WaylandEglClientHwIntegration.so.*"
+    ];
 
     buildPhase = ":";
 
