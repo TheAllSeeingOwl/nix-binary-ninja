@@ -46,7 +46,6 @@ in
       auto-patchelf
       autoPatchelfHook
       python3.pkgs.wrapPython
-      kdePackages.wrapQtAppsHook
       copyDesktopItems
     ];
     buildInputs = [
@@ -58,9 +57,10 @@ in
       xorg.libXrender
       xorg.xcbutilimage
       xorg.xcbutilrenderutil
-      kdePackages.qtbase
-      kdePackages.qtdeclarative
-      kdePackages.qtwayland
+      # Qt is provided by Binary Ninja's bundled qt/ directory, NOT Nix.
+      # The bundled PySide6/shiboken6/binaryninjaui are compiled against
+      # the bundled Qt and are ABI-incompatible with Nix's Qt
+      # (Qt_6_PRIVATE_API symbol version mismatch).
       libxkbcommon
       dbus
       wayland
@@ -68,6 +68,10 @@ in
     ];
     pythonDeps = [python3.pkgs.pip] ++ extraPythonDeps;
     appendRunpaths = ["${lib.getLib python3}/lib"];
+
+    # Wayland EGL integration lib may not be in the bundled Qt
+    autoPatchelfIgnoreMissingDeps = ["libQt6WaylandEglClientHwIntegration.so.*"];
+
     qtWrapperArgs = lib.optionals forceWayland [
       "--set"
       "QT_QPA_PLATFORM"
@@ -94,21 +98,10 @@ in
       mkdir -p $out/share/pixmaps
       cp -r * $out/opt/binaryninja
 
-      # Hide the entire Python tree and bundled Qt from autoPatchelf.
-      # The bundled PySide6/shiboken6/binaryninjaui are compiled against
-      # Binary Ninja's bundled Qt. Nix's Qt has incompatible Qt_6_PRIVATE_API
-      # symbols. We keep the bundled Qt and restore everything after autoPatchelf.
-      mv $out/opt/binaryninja/python3 $out/python3_bundled
-      mv $out/opt/binaryninja/python $out/python_bundled
-      mv $out/opt/binaryninja/qt $out/qt_bundled
+      # Point autoPatchelf at the bundled Qt so it resolves Qt deps from
+      # there instead of Nix's Qt (which we removed from buildInputs).
+      addAutoPatchelfSearchPath "$out/opt/binaryninja/qt/lib"
 
-      find $out/opt/binaryninja \
-        \( -type f -o -type l \) \
-        -name '*.so.*' \
-        -not -name 'libbinaryninjacore.so.*' \
-        -not -name 'libbinaryninjaui.so.*' \
-        -not -name 'liblldb.so.*' \
-        -delete
       find $out -xtype l -print -delete
       cp ${desktopIcon} $out/share/pixmaps/binaryninja.png
       chmod +x $out/opt/binaryninja/binaryninja
@@ -127,14 +120,6 @@ in
     preFixup = ''
       patchelf $out/opt/binaryninja/plugins/lldb/lib/liblldb.so.* \
         --replace-needed libxml2.so.2 libxml2.so
-    '';
-
-    # Restore the Python trees and bundled Qt after autoPatchelf so they
-    # keep their original Qt ABI linkage.
-    postFixup = ''
-      mv $out/python3_bundled $out/opt/binaryninja/python3
-      mv $out/python_bundled $out/opt/binaryninja/python
-      mv $out/qt_bundled $out/opt/binaryninja/qt
     '';
 
     dontWrapQtApps = true;
