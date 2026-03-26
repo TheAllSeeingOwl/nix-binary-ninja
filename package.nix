@@ -72,8 +72,8 @@ in
     # Wayland EGL integration lib may not be in the bundled Qt
     autoPatchelfIgnoreMissingDeps = ["libQt6WaylandEglClientHwIntegration.so.*"];
 
-    qtWrapperArgs = lib.optionals forceWayland [
-      "--set"
+    forceWaylandArgs = lib.optionals forceWayland [
+      "--set-default"
       "QT_QPA_PLATFORM"
       "wayland"
     ];
@@ -100,7 +100,7 @@ in
 
       # Point autoPatchelf at the bundled Qt so it resolves Qt deps from
       # there instead of Nix's Qt (which we removed from buildInputs).
-      addAutoPatchelfSearchPath "$out/opt/binaryninja/qt/lib"
+      addAutoPatchelfSearchPath "$out/opt/binaryninja/qt"
 
       find $out -xtype l -print -delete
       cp ${desktopIcon} $out/share/pixmaps/binaryninja.png
@@ -108,7 +108,7 @@ in
       buildPythonPath "$pythonDeps"
       makeWrapper $out/opt/binaryninja/binaryninja $out/bin/binaryninja \
         --prefix PYTHONPATH : "$program_PYTHONPATH" \
-        "''${qtWrapperArgs[@]}"
+        "''${forceWaylandArgs[@]}"
 
       runHook postInstall
     '';
