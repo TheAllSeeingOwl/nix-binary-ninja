@@ -94,10 +94,12 @@ in
       mkdir -p $out/share/pixmaps
       cp -r * $out/opt/binaryninja
 
-      # Move PySide6 out before we delete bundled Qt and run autoPatchelf.
-      # PySide6 was compiled against the bundled Qt and is ABI-incompatible
-      # with Nix's Qt (Qt_6_PRIVATE_API symbol version mismatch).
-      mv $out/opt/binaryninja/python3/PySide6 $out/pyside6_bundled
+      # Hide the entire Python tree from autoPatchelf. The bundled PySide6,
+      # shiboken6, and binaryninjaui Python modules are all compiled against
+      # Binary Ninja's bundled Qt. autoPatchelf would relink them against
+      # Nix's Qt which has incompatible Qt_6_PRIVATE_API symbols.
+      mv $out/opt/binaryninja/python3 $out/python3_bundled
+      mv $out/opt/binaryninja/python $out/python_bundled
 
       rm -rf $out/opt/binaryninja/qt
       find $out/opt/binaryninja \
@@ -127,10 +129,11 @@ in
         --replace-needed libxml2.so.2 libxml2.so
     '';
 
-    # Restore PySide6 after autoPatchelf so it keeps its bundled Qt dependencies
-    # intact rather than being relinked against Nix's incompatible Qt.
+    # Restore the Python trees after autoPatchelf so they keep their bundled
+    # Qt/shiboken dependencies intact.
     postFixup = ''
-      mv $out/pyside6_bundled $out/opt/binaryninja/python3/PySide6
+      mv $out/python3_bundled $out/opt/binaryninja/python3
+      mv $out/python_bundled $out/opt/binaryninja/python
     '';
 
     dontWrapQtApps = true;
