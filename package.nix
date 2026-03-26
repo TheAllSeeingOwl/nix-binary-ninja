@@ -66,7 +66,7 @@ in
       wayland
       libxml2.out
     ];
-    pythonDeps = [python3.pkgs.pip python3.pkgs.pyside6] ++ extraPythonDeps;
+    pythonDeps = [python3.pkgs.pip] ++ extraPythonDeps;
     appendRunpaths = ["${lib.getLib python3}/lib"];
     qtWrapperArgs = lib.optionals forceWayland [
       "--set"
@@ -97,11 +97,10 @@ in
       find $out/opt/binaryninja \
         \( -type f -o -type l \) \
         -name '*.so.*' \
+        -not -path '*/python3/*' \
         -not -name 'libbinaryninjacore.so.*' \
         -not -name 'libbinaryninjaui.so.*' \
         -not -name 'liblldb.so.*' \
-        -not -name 'libshiboken6.abi*.so.*' \
-        -not -name 'libpyside6.abi*.so.*' \
         -delete
       find $out -xtype l -print -delete
       cp ${desktopIcon} $out/share/pixmaps/binaryninja.png
