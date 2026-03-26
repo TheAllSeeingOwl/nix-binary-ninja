@@ -73,7 +73,7 @@ in
     autoPatchelfIgnoreMissingDeps = ["libQt6WaylandEglClientHwIntegration.so.*"];
 
     forceWaylandArgs = lib.optionals forceWayland [
-      "--set-default"
+      "--set"
       "QT_QPA_PLATFORM"
       "wayland"
     ];
